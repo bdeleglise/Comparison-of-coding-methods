@@ -49,29 +49,30 @@ def encode_text(type, algo, file, output, debug):
         min_error = min(predicted_errors)
         max_error = max(predicted_errors)
 
-        # 2 methods to measure errors
+        # 2 methods to stock errors
 
         """ First one
         to know how many bits occupy the error measurement we estimate that we need at most a sufficient number of 
         bits to represent the difference between the max and the min 
         
         in addition to that, for the decoding it will be necessary to store the first symbol on a maximum of 8 bits and 
-        the minimum which can be negative and will occupy therefore a maximum of 9 bits. So we add 17 bits to the result
+        the min and max which can be negative and will occupy therefore a maximum of 9 bits. So we add 26 bits to the result
         """
         nbsymbolesMax = max_error - min_error + 1
         encoded_length = np.ceil(np.log2(nbsymbolesMax)) * len(predicted_errors)
-        data_to_decode = 17
+        data_to_decode = 26
 
         """ Second one
         For the second method we estimate the minimum number of bits necessary to translate the errors and then 
         we set up a dictionary that must be saved
         
-        for the dictionary 9 bits are used to encode one symbol because it can be negative and we need 32bits to encode 
-        an int -> so for each symbol we need 41bits
+        for the dictionary 9 bits are used to encode one symbol because it can be negative and we need 
+        np.ceil(np.log2(nbsymbolesMax)) to encode the minimum translation
+         + 4bits to determine the minimum number
         """
         nbsymbolesMax = len(Counter(result))
         encoded_length_dict = np.ceil(np.log2(nbsymbolesMax)) * len(result)
-        dictionary = nbsymbolesMax * 41
+        dictionary = nbsymbolesMax * (np.ceil(np.log2(nbsymbolesMax)) + 9) + 4
 
         write_text_result(file, unicode, initial_length,
                           encoded_length, data_to_decode,
@@ -356,20 +357,21 @@ def process_one_axis_predictive_coding_algo(image, color, output, file):
 
            in addition to that, for the decoding it will be necessary to store the first line and column 
            on a maximum of 8 bits and 
-           the minimum which can be negative and will occupy therefore a maximum of 9 bits. 
-           So we add (h+w-1)*8 + 9 bits to the result
+           the minimum and max which can be negative and will occupy therefore a maximum of 9 bits. 
+           So we add (h+w-1)*8 + 18 bits to the result
     """
     nbsymbolesMax = max_error - min_error + 1
     encoded_length = np.ceil(np.log2(nbsymbolesMax)) * (erreur.size - len(image) - len(image[0]))
-    data_to_decode = (len(image) + len(image[0]) - 1) * 8 + 9
+    data_to_decode = (len(image) + len(image[0]) - 1) * 8 + 18
 
     """ Second one
             For the second method we estimate the minimum number of bits necessary to translate the errors and then 
             we set up a dictionary that must be saved
 
-            for the dictionary 9 bits are used to encode one symbol because it can be negative and we need 32bits to encode 
-            an int -> so for each symbol we need 41bits
-            """
+        for the dictionary 9 bits are used to encode one symbol because it can be negative and we need 
+        np.ceil(np.log2(nbsymbolesMax)) to encode the minimum translation
+         + 4bits to determine the minimum number
+    """
     erreur = erreur[:, 1:]
     erreur = np.column_stack([image[:, 0], erreur])
     erreur = erreur[1:, :]
@@ -377,7 +379,7 @@ def process_one_axis_predictive_coding_algo(image, color, output, file):
     erreurArr = erreur.astype('int').flatten()
     nbsymbolesMax = len(Counter(erreurArr))
     encoded_length_dict = np.ceil(np.log2(nbsymbolesMax)) * len(erreurArr)
-    dictionary = nbsymbolesMax * 41
+    dictionary = nbsymbolesMax * (np.ceil(np.log2(nbsymbolesMax)) + 9) + 4
 
     initial_length = image.size
     write_image_result(file, initial_length,
@@ -456,19 +458,20 @@ def encode_gray_scale_image(imagelue, algo, file, output, debug):
 
         in addition to that, for the decoding it will be necessary to store the first line and column 
         on a maximum of 8 bits and 
-        the minimum which can be negative and will occupy therefore a maximum of 9 bits. 
-        So we add (h+w-1)*8 + 9 bits to the result
+        the minimum and max which can be negative and will occupy therefore a maximum of 9 bits. 
+        So we add (h+w-1)*8 + 18 bits to the result
         """
         nbsymbolesMax = max_error - min_error + 1
         encoded_length = np.ceil(np.log2(nbsymbolesMax)) * (erreur.size - len(image) - len(image[0]))
-        data_to_decode = (len(image) + len(image[0]) - 1) * 8 + 9
+        data_to_decode = (len(image) + len(image[0]) - 1) * 8 + 18
 
         """ Second one
         For the second method we estimate the minimum number of bits necessary to translate the errors and then 
         we set up a dictionary that must be saved
 
-        for the dictionary 9 bits are used to encode one symbol because it can be negative and we need 32bits to encode 
-        an int -> so for each symbol we need 41bits
+        for the dictionary 9 bits are used to encode one symbol because it can be negative and we need 
+        np.ceil(np.log2(nbsymbolesMax)) to encode the minimum translation
+         + 4bits to determine the minimum number
         """
         erreur = erreur[:, 1:]
         erreur = np.column_stack([image[:, 0], erreur])
@@ -477,7 +480,7 @@ def encode_gray_scale_image(imagelue, algo, file, output, debug):
         erreurArr = erreur.astype('int').flatten()
         nbsymbolesMax = len(Counter(erreurArr))
         encoded_length_dict = np.ceil(np.log2(nbsymbolesMax)) * len(erreurArr)
-        dictionary = nbsymbolesMax * 41
+        dictionary = nbsymbolesMax * (np.ceil(np.log2(nbsymbolesMax)) + 9) + 4
 
         write_image_result(file, initial_length,
                            encoded_length, data_to_decode,
