@@ -3,7 +3,7 @@ import sys
 import encode
 
 #path access path of the results files
-RESULT_TEXT_FILE_PATH = 'result_text.csv'
+RESULT_TEXT_FILE_PATH = 'result_texts.csv'
 RESULT_IMAGE_FILE_PATH = 'result_image.csv'
 
 """

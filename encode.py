@@ -80,7 +80,7 @@ def encode_text(type, algo, file, output, debug):
                           1 - ((encoded_length + data_to_decode) / initial_length),
                           encoded_length_dict, dictionary,
                           1 - (encoded_length_dict / initial_length),
-                          1 - ((encoded_length + dictionary) / initial_length),
+                          1 - ((encoded_length_dict + dictionary) / initial_length),
                           end - start,
                           "Predictive coding", "OK", output)
 
@@ -177,14 +177,18 @@ def encode_rgb_image(imagelue, algo, file, output, debug):
 
     arithmetic_coding_algo, predictive_coding_algo, predictive_arithmetic_coding = define_coding_method(algo)
 
+    counter = Counter(imagelue.astype('int').flatten())
+    nbsymboles = len(counter)
+    length_with_min_bit = np.ceil(np.log2(nbsymboles)) * imagelue.size
+
     if predictive_coding_algo is True:
         print('Predictive coding')
         encoded_length_red, data_to_decode_red, encoded_length_dict_red, dictionary_red, time_red = \
-            process_one_axis_predictive_coding_algo(red, " RED", output, file)
+            process_one_axis_predictive_coding_algo(red, " RED", output, file, debug)
         encoded_length_green, data_to_decode_green, encoded_length_dict_green, dictionary_green, time_green = \
-            process_one_axis_predictive_coding_algo(green, " GREEN", output, file)
+            process_one_axis_predictive_coding_algo(green, " GREEN", output, file, debug)
         encoded_length_blue, data_to_decode_blue, encoded_length_dict_blue, dictionary_blue, time_blue = \
-            process_one_axis_predictive_coding_algo(blue, " BLUE", output, file)
+            process_one_axis_predictive_coding_algo(blue, " BLUE", output, file, debug)
 
         initial_length = imagelue.size
         encoded_length = encoded_length_red + encoded_length_green + encoded_length_blue
@@ -195,13 +199,13 @@ def encode_rgb_image(imagelue, algo, file, output, debug):
         write_image_result(file, initial_length,
                            encoded_length,
                            data_to_decode,
-                           1 - (encoded_length / initial_length),
-                           1 - ((encoded_length + data_to_decode) / initial_length),
+                           1 - (encoded_length / (initial_length*8)),
+                           1 - ((encoded_length + data_to_decode) / (initial_length*8)),
                            encoded_length_dict, dictionary,
-                           1 - (encoded_length_dict / initial_length),
-                           1 - ((encoded_length + dictionary) / initial_length),
+                           1 - (encoded_length_dict / (initial_length*8)),
+                           1 - ((encoded_length_dict + dictionary) / (initial_length*8)),
                            time,
-                           "Predictive coding", "OK", output, "", 24)
+                           "Predictive coding", "OK", output, "", 8, length_with_min_bit)
 
     if arithmetic_coding_algo is True:
         print('Arithmetic coding')
@@ -210,9 +214,9 @@ def encode_rgb_image(imagelue, algo, file, output, debug):
                                                                                                              output,
                                                                                                              file, debug)
         encoded_length_green, freqs_length_green, time_green, status_green = process_one_axis_arithmetic_coding_algo(
-            green, " RED", output, file, debug)
+            green, " GREEN", output, file, debug)
         encoded_length_blue, freqs_length_blue, time_blue, status_blue = process_one_axis_arithmetic_coding_algo(
-            blue, " RED", output, file, debug)
+            blue, " BLUE", output, file, debug)
 
         initial_length = imagelue.size
         encoded_length = encoded_length_red + encoded_length_green + encoded_length_blue
@@ -220,11 +224,11 @@ def encode_rgb_image(imagelue, algo, file, output, debug):
         time = time_red + time_green + time_blue
         write_image_result(file, initial_length,
                            encoded_length, freqs_length,
-                           1 - (encoded_length / initial_length),
-                           1 - ((encoded_length + freqs_length) / initial_length),
-                           None, None, None, None,
+                           1 - (encoded_length / (initial_length*8)),
+                           1 - ((encoded_length + freqs_length) / (initial_length*8)),
+                           0, 0, 0, 0,
                            time, "Arithmetic coding", status_red and status_green and status_blue,
-                           output, "", 24)
+                           output, "", 8, length_with_min_bit)
 
     if predictive_arithmetic_coding is True:
         print('Predictive + Arithmetic coding')
@@ -233,9 +237,9 @@ def encode_rgb_image(imagelue, algo, file, output, debug):
                                                                                                                    output,
                                                                                                                    file, debug)
         encoded_length_green, freqs_length_green, time_green, status_green = process_one_axis_predictive_arithmetic_coding(
-            green, " RED", output, file, debug)
+            green, " GREEN", output, file, debug)
         encoded_length_blue, freqs_length_blue, time_blue, status_blue = process_one_axis_predictive_arithmetic_coding(
-            blue, " RED", output, file, debug)
+            blue, " BLUE", output, file, debug)
 
         initial_length = imagelue.size
         encoded_length = encoded_length_red + encoded_length_green + encoded_length_blue
@@ -243,11 +247,11 @@ def encode_rgb_image(imagelue, algo, file, output, debug):
         time = time_red + time_green + time_blue
         write_image_result(file, initial_length,
                            encoded_length, freqs_length,
-                           1 - (encoded_length / initial_length),
-                           1 - ((encoded_length + freqs_length) / initial_length),
-                           None, None, None, None,
+                           1 - (encoded_length / (initial_length*8)),
+                           1 - ((encoded_length + freqs_length) / (initial_length*8)),
+                           0, 0, 0, 0,
                            time, "Predictive + Arithmetic coding", status_red and status_green and status_blue,
-                           output, "", 24)
+                           output, "", 8, length_with_min_bit)
 
 
 """
@@ -285,13 +289,14 @@ def process_one_axis_predictive_arithmetic_coding(image, color, output, file, de
             status = "KO"
 
     initial_length = image.size
-    write_image_result(file, initial_length,
+    if debug:
+        write_image_result(file, initial_length,
                        encoded_length, freqs_length,
-                       1 - (encoded_length / initial_length),
-                       1 - ((encoded_length + freqs_length) / initial_length),
-                       None, None, None, None,
+                       1 - (encoded_length / (initial_length*8)),
+                       1 - ((encoded_length + freqs_length) / (initial_length*8)),
+                       0, 0, 0, 0,
                        end - start, "Predictive + Arithmetic coding", status,
-                       output, color, 8)
+                       output, color, 8, None)
 
     return encoded_length, freqs_length, end - start, status
 
@@ -326,13 +331,14 @@ def process_one_axis_arithmetic_coding_algo(image, color, output, file, debug):
             status = "KO"
 
     initial_length = image.size
-    write_image_result(file, initial_length,
+    if debug:
+        write_image_result(file, initial_length,
                        encoded_length, freqs_length,
-                       1 - (encoded_length / initial_length),
-                       1 - ((encoded_length + freqs_length) / initial_length),
-                       None, None, None, None,
+                       1 - (encoded_length / (initial_length*8)),
+                       1 - ((encoded_length + freqs_length) / (initial_length*8)),
+                       0, 0, 0, 0,
                        end - start, "Arithmetic coding", status,
-                       output, color, 8)
+                       output, color, 8, None)
 
     return encoded_length, freqs_length, end - start, status
 
@@ -343,7 +349,7 @@ on a specific axis
 """
 
 
-def process_one_axis_predictive_coding_algo(image, color, output, file):
+def process_one_axis_predictive_coding_algo(image, color, output, file, debug):
     start = time.time()
     imagepred, erreur = predictive_coding.imgage_predictive_coding(image)
     end = time.time()
@@ -382,15 +388,17 @@ def process_one_axis_predictive_coding_algo(image, color, output, file):
     dictionary = nbsymbolesMax * (np.ceil(np.log2(nbsymbolesMax)) + 9) + 4
 
     initial_length = image.size
-    write_image_result(file, initial_length,
+
+    if debug:
+        write_image_result(file, initial_length,
                        encoded_length, data_to_decode,
-                       1 - (encoded_length / initial_length),
-                       1 - ((encoded_length + data_to_decode) / initial_length),
+                       1 - (encoded_length / (initial_length*8)),
+                       1 - ((encoded_length + data_to_decode) / (initial_length*8)),
                        encoded_length_dict, dictionary,
-                       1 - (encoded_length_dict / initial_length),
-                       1 - ((encoded_length + dictionary) / initial_length),
+                       1 - (encoded_length_dict / (initial_length*8)),
+                       1 - ((encoded_length + dictionary) / (initial_length*8)),
                        end - start,
-                       "Predictive coding", "OK", output, color, 8)
+                       "Predictive coding", "OK", output, color, 8, None)
 
     return encoded_length, data_to_decode, encoded_length_dict, dictionary, end - start
 
@@ -408,6 +416,10 @@ def encode_gray_scale_image(imagelue, algo, file, output, debug):
     imageout = image.astype('uint8')
 
     initial_length = imageout.size
+
+    counter = Counter(imageout.flatten())
+    nbsymboles = len(counter)
+    length_with_min_bit = np.ceil(np.log2(nbsymboles)) * initial_length
 
     if debug is True:
         # Code from https://github.com/gabilodeau/INF8770/blob/master/Codage%20arithmetique.ipynb
@@ -484,13 +496,13 @@ def encode_gray_scale_image(imagelue, algo, file, output, debug):
 
         write_image_result(file, initial_length,
                            encoded_length, data_to_decode,
-                           1 - (encoded_length / initial_length),
-                           1 - ((encoded_length + data_to_decode) / initial_length),
+                           1 - (encoded_length / (initial_length*8)),
+                           1 - ((encoded_length + data_to_decode) / (initial_length*8)),
                            encoded_length_dict, dictionary,
-                           1 - (encoded_length_dict / initial_length),
-                           1 - ((encoded_length + dictionary) / initial_length),
+                           1 - (encoded_length_dict / (initial_length*8)),
+                           1 - ((encoded_length_dict + dictionary) / (initial_length*8)),
                            end - start,
-                           "Predictive coding", "OK", output, " GRAY level", 8)
+                           "Predictive coding", "OK", output, " GRAY level", 8, length_with_min_bit)
 
     if arithmetic_coding_algo is True:
         print('Arithmetic coding')
@@ -520,11 +532,11 @@ def encode_gray_scale_image(imagelue, algo, file, output, debug):
                 status = "KO"
         write_image_result(file, initial_length,
                            encoded_length, freqs_length,
-                           1 - (encoded_length / initial_length),
-                           1 - ((encoded_length + freqs_length) / initial_length),
-                           None, None, None, None,
+                           1 - (encoded_length / (initial_length*8)),
+                           1 - ((encoded_length + freqs_length) / (initial_length*8)),
+                           0, 0, 0, 0,
                            end - start, "Arithmetic coding", status,
-                           output, " GRAY level", 8)
+                           output, " GRAY level", 8, length_with_min_bit)
 
     if predictive_arithmetic_coding is True:
         print('Predictive + Arithmetic coding')
@@ -560,11 +572,11 @@ def encode_gray_scale_image(imagelue, algo, file, output, debug):
                 status = "KO"
         write_image_result(file, initial_length,
                            encoded_length, freqs_length,
-                           1 - (encoded_length / initial_length),
-                           1 - ((encoded_length + freqs_length) / initial_length),
-                           None, None, None, None,
-                           end - start, "Arithmetic coding", status,
-                           output, " GRAY level", 8)
+                           1 - (encoded_length / (initial_length*8)),
+                           1 - ((encoded_length + freqs_length) / (initial_length*8)),
+                           0, 0, 0, 0,
+                           end - start, "Predictive + Arithmetic coding", status,
+                           output, " GRAY level", 8, length_with_min_bit)
 
 
 # Source https://github.com/gabilodeau/INF8770/blob/master/Codage%20predictif%20sur%20image.ipynb
@@ -639,13 +651,13 @@ def write_image_result(title, initial_length,
                        encoded_length_dict, dict_size,
                        compression_encoded_dict, compression_dict_with_data_to_decode,
                        time, algo,
-                       status, output, type, nbBits):
+                       status, output, type, nbBits, length_with_min_bit):
     title += type
     f = open(output, "a")
     f.write(
         title + ";" + status + ";" + algo + ";" + str(initial_length * nbBits) + ";" + str(encoded_length) + ";" + str(
-            data_to_decode) + ";" + str(compression_encoded) + ";" + str(compression_with_data_to_decode)
-        + ";" + str(encoded_length_dict) + ";" + str(dict_size)
+            data_to_decode+encoded_length) + ";" + str(compression_encoded) + ";" + str(compression_with_data_to_decode)
+        + ";" + str(encoded_length_dict) + ";" + str(encoded_length_dict+dict_size)
         + ";" + str(compression_encoded_dict) + ";" + str(compression_dict_with_data_to_decode) + ";"
-        + str(time)+ "\n")
+        + str(time) + ";" + str(length_with_min_bit) + "\n")
     f.close()
