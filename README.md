@@ -42,3 +42,5 @@ python main.py TYPE MODE ALGO FILE [DEBUG]
   - https://github.com/nayuki/Reference-arithmetic-coding
   - https://github.com/ahmedfgad/ArithmeticEncodingPython
   - https://marknelson.us/posts/2014/10/19/data-compression-with-arithmetic-coding.html
+
+* Dataset sources are available on the report

@@ -2,7 +2,7 @@ echo "Init tests ..."
 echo "Clear old results..."
 rm result_texts.csv
 rm result_image.csv
-echo "Titre;Statut;Algorithme;Taille initial;Taille après compression;Taille des données pour décodage;Taux de compression sans les données pour décodage;Taux de compression avec les données de décodage;Taille avec utilisation d'un dictionnaire;Taille du dictionnaire;Taux de compression sans le dictionnaire;Taux de compression avec le dictionnaire;Temps;Taille avec min bit" > result_texts.csv
+echo "Titre;Statut;Algorithme;Taille initial;Taille après compression;Taille des données pour décodage;Taux de compression sans les données pour décodage;Taux de compression avec les données de décodage;Taille avec utilisation d'un dictionnaire;Taille du dictionnaire;Taux de compression sans le dictionnaire;Taux de compression avec le dictionnaire;Temps;" > result_texts.csv
 echo "Titre;Statut;Algorithme;Taille initial;Taille après compression;Taille des données pour décodage;Taux de compression sans les données pour décodage;Taux de compression avec les données de décodage;Taille avec utilisation d'un dictionnaire;Taille du dictionnaire;Taux de compression sans le dictionnaire;Taux de compression avec le dictionnaire;Temps;Taille avec min bit" > result_image.csv
 echo "Running tester ..."
 echo "-------------------Text encoding--------------------"
@@ -11,7 +11,7 @@ do
     echo "Compressing ... ""$file"
 
     #Add -d to go in debug mod
-    echo "Message ..."
+    #echo "Message ..."
     #python main.py -t -M -ALL "$file"
     echo "Unicode ..."
     python main.py -t -Unicode -ALL "$file"
